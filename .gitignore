@@ -1,0 +1,36 @@
+# .gitignore — Open WebUI Termux
+
+# Never commit secrets or local data
+.env
+*.db
+*.db-shm
+*.db-wal
+owui.pid
+owui.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Wheels / deps cache
+wheels/
+*.whl
+prebuilt-wheels/
+deps-install.*

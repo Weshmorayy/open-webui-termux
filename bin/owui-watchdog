@@ -1,0 +1,39 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Open WebUI — Watchdog Script
+# Keeps the server alive by restarting it if it dies.
+# Run in a dedicated Termux session: ~/bin/owui-watchdog
+# Keep the Termux window open (Android won't kill foreground processes).
+
+VENV="$HOME/open-webui-env"
+ENV_FILE="$HOME/open-webui-data/.env"
+DATA_DIR="$HOME/open-webui-data"
+LOG_FILE="$DATA_DIR/owui.log"
+
+# Acquire wake lock
+termux-wake-lock 2>/dev/null && echo "[watchdog] Wake lock acquired"
+
+# Load env vars
+set -a
+source "$ENV_FILE"
+set +a
+
+export PATH="$VENV/bin:$PATH"
+export LD_PRELOAD=/data/data/com.termux/files/usr/lib/libpython3.11.so
+export USE_SLIM_DOCKER=true
+export FRONTEND_BUILD_DIR="$VENV/lib/python3.11/site-packages/open_webui/frontend"
+export DATA_DIR="$DATA_DIR"
+
+echo "[watchdog] Starting Open WebUI watchdog. Press Ctrl+C to stop."
+echo "[watchdog] URL: http://127.0.0.1:8080"
+echo ""
+
+while true; do
+    echo "[watchdog] $(date '+%H:%M:%S') — Starting server..."
+    "$VENV/bin/open-webui" serve \
+        --host 127.0.0.1 \
+        --port 8080 \
+        >> "$LOG_FILE" 2>&1
+    EXIT_CODE=$?
+    echo "[watchdog] $(date '+%H:%M:%S') — Server exited (code $EXIT_CODE). Restarting in 5s..."
+    sleep 5
+done

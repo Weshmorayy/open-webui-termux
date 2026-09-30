@@ -1,0 +1,27 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Open WebUI — Status Script
+# Usage: ~/bin/owui-status
+
+LOG_FILE="$HOME/open-webui-data/owui.log"
+
+echo "=== Open WebUI Status ==="
+
+# Use pgrep to find the actual open-webui server process
+SERVER_PID=$(pgrep -f "open-webui serve" 2>/dev/null | head -1)
+
+if [ -n "$SERVER_PID" ]; then
+    echo "Status : RUNNING (PID $SERVER_PID)"
+    echo "URL    : http://127.0.0.1:8080"
+    # Check health
+    if curl -sf http://127.0.0.1:8080/health > /dev/null 2>&1; then
+        echo "Health : OK"
+    else
+        echo "Health : Not responding yet (may still be starting)"
+    fi
+else
+    echo "Status : STOPPED"
+fi
+
+echo ""
+echo "=== Last 20 log lines ==="
+tail -20 "$LOG_FILE" 2>/dev/null || echo "(no log yet)"

@@ -1,0 +1,26 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Open WebUI — Stop Script
+# Usage: ~/bin/owui-stop
+
+PID_FILE="$HOME/open-webui-data/owui.pid"
+
+# Find the actual server process via pgrep
+SERVER_PID=$(pgrep -f "open-webui serve" 2>/dev/null | head -1)
+
+if [ -z "$SERVER_PID" ]; then
+    echo "Open WebUI is not running."
+    rm -f "$PID_FILE"
+    exit 0
+fi
+
+echo "Stopping Open WebUI (PID $SERVER_PID)..."
+kill "$SERVER_PID"
+sleep 2
+
+if kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "Forcing stop..."
+    kill -9 "$SERVER_PID"
+fi
+
+rm -f "$PID_FILE"
+echo "Stopped."

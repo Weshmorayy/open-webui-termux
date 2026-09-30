@@ -1,0 +1,59 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Open WebUI — Start Script
+# Usage: ~/bin/owui-start
+
+VENV="$HOME/open-webui-env"
+ENV_FILE="$HOME/open-webui-data/.env"
+DATA_DIR="$HOME/open-webui-data"
+LOG_FILE="$DATA_DIR/owui.log"
+PID_FILE="$DATA_DIR/owui.pid"
+
+# Check if already running
+EXISTING_PID=$(pgrep -f "open-webui serve" 2>/dev/null | head -1)
+if [ -n "$EXISTING_PID" ]; then
+    echo "Open WebUI is already running (PID $EXISTING_PID)"
+    echo "Access at: http://127.0.0.1:8080"
+    exit 0
+fi
+
+echo "Starting Open WebUI..."
+
+# Acquire wake lock to prevent Android from killing background process
+termux-wake-lock 2>/dev/null && echo "(Wake lock acquired — Android will not kill the process)"
+
+# Load env vars
+set -a
+source "$ENV_FILE"
+set +a
+
+export PATH="$VENV/bin:$PATH"
+export LD_PRELOAD=/data/data/com.termux/files/usr/lib/libpython3.11.so
+export USE_SLIM_DOCKER=true
+export FRONTEND_BUILD_DIR="$VENV/lib/python3.11/site-packages/open_webui/frontend"
+export DATA_DIR="$DATA_DIR"
+
+# Start in background
+nohup "$VENV/bin/open-webui" serve \
+    --host 127.0.0.1 \
+    --port 8080 \
+    >> "$LOG_FILE" 2>&1 &
+
+PID=$!
+echo $PID > "$PID_FILE"
+
+echo "Started (PID $PID)"
+echo "Log: $LOG_FILE"
+echo ""
+echo "Waiting for Open WebUI to be ready..."
+for i in $(seq 1 45); do
+    sleep 2
+    if curl -sf http://127.0.0.1:8080/health > /dev/null 2>&1; then
+        echo ""
+        echo "✓ Open WebUI is ready!"
+        echo "  URL: http://127.0.0.1:8080"
+        exit 0
+    fi
+    printf "."
+done
+echo ""
+echo "Notice: Open WebUI is initializing (PID $PID). Check log: $LOG_FILE"
